@@ -1,4 +1,4 @@
-module github.com/OstojaOS/module-sdk
+module github.com/PaNasMs/module-sdk
 
 go 1.26.0
 

@@ -1,7 +1,7 @@
-# OstojaOS module SDK
+# PaNasMs module SDK
 
 Shared Go module host, Linux identity checks, transfer helpers and TypeScript
-contracts for the API 1 globals provided by OstojaOS core 0.2.x.
+contracts for the API 1 globals provided by PaNasMs core 0.2.x.
 The frontend declarations describe host-provided APIs; do not bundle the core,
 React, router or query client in extensions. Pin SDK releases in module builds.
 
