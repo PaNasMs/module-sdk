@@ -1,9 +1,43 @@
 # PaNasMs module SDK
 
-Shared Go module host, Linux identity checks, transfer helpers and TypeScript
-contracts for the API 1 globals provided by PaNasMs core 0.2.x.
-The frontend declarations describe host-provided APIs; do not bundle the core,
-React, router or query client in extensions. Pin SDK releases in module builds.
+Shared building blocks for independently installed PaNasMs modules. The SDK
+provides Go module hosting, Linux identity checks and transfer helpers, plus
+TypeScript declarations for the API 1 globals exposed by core 0.2.x.
 
-Run `go test -tags pam ./...` on Linux with libpam0g-dev installed.
-Original code: PolyForm Noncommercial 1.0.0; see NOTICE for dependencies.
+## Contents
+
+| Path | Purpose |
+| --- | --- |
+| [modulehost](modulehost) | Module service hosting |
+| [auth](auth) | Linux identity and PAM integration |
+| [transfer](transfer) | File-transfer helpers |
+| [modules](modules) | Shared module definitions |
+| [types](types) | Host-provided frontend API declarations |
+
+Official modules are [Files](https://github.com/PaNasMs/module-files),
+[Terminal](https://github.com/PaNasMs/module-terminal) and
+[Cloud Sync](https://github.com/PaNasMs/module-cloud-sync). Their Go modules pin
+SDK versions; update and test the dependency deliberately when changing contracts.
+
+## Development
+
+Use Linux, Go 1.26 or newer, a C compiler and PAM headers (`libpam0g-dev` on Debian).
+
+```sh
+go test -tags pam ./...
+go vet -tags pam ./...
+```
+
+The TypeScript package is private and supplies declarations, not a separately
+published runtime. Module bundles must use the core-provided React, router and
+query client rather than bundle duplicate instances. SDK version, module package
+version, core compatibility range and module API version are separate contracts;
+check each when releasing a module.
+
+See the [registry](https://github.com/PaNasMs/module-registry) for package signing
+and distribution. No signing keys or installable module archives belong here.
+
+## License
+
+Public documentation is maintained in English. Original code uses
+[PolyForm Noncommercial 1.0.0](LICENSE); see [NOTICE](NOTICE) for dependencies.
