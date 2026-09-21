@@ -19,6 +19,14 @@ Official modules are [Files](https://github.com/PaNasMs/module-files),
 [Cloud Sync](https://github.com/PaNasMs/module-cloud-sync). Their Go modules pin
 SDK versions; update and test the dependency deliberately when changing contracts.
 
+## Identity checks
+
+`auth.Lookup` remains administrator-only for existing modules. Modules that support
+ordinary panel users must explicitly use `auth.LookupPanel`, enforce Linux file
+permissions and authorize each operation. Both paths read current Linux membership
+and PaNasMs account access policy. Core authenticates the session before proxying
+a request; module sockets must accept only the trusted core peer.
+
 ## Development
 
 Use Linux, Go 1.26 or newer, a C compiler and PAM headers (`libpam0g-dev` on Debian).
