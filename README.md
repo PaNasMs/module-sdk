@@ -49,3 +49,11 @@ and distribution. No signing keys or installable module archives belong here.
 
 Public documentation is maintained in English. Original code uses
 [PolyForm Noncommercial 1.0.0](LICENSE); see [NOTICE](NOTICE) for dependencies.
+
+## External permissions
+
+The `external` Go package is the backend client for the core's private Unix token
+broker. `types/external.d.ts` describes the host's Google consent component and
+permission metadata. See the [module permission integration guide](https://github.com/PaNasMs/panasms/blob/main/documentation/external-grants.md)
+for consumer registration, identity ownership, rclone integration and lifecycle
+requirements. Refresh tokens and client secrets remain in the core.
