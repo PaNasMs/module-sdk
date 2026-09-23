@@ -57,3 +57,33 @@ broker. `types/external.d.ts` describes the host's Google consent component and
 permission metadata. See the [module permission integration guide](https://github.com/PaNasMs/panasms/blob/main/documentation/external-grants.md)
 for consumer registration, identity ownership, rclone integration and lifecycle
 requirements. Refresh tokens and client secrets remain in the core.
+
+### Retaining an interactive module page
+
+Set `keepAlive: true` in the module definition to retain its mounted component after the first visit. The shell passes `active` to the component; use it to manage focus and visibility-dependent rendering. Switching sections preserves component state and live connections. This is browser-session retention, not recovery after a reload. The component is unmounted on sign-out or loss of administrator access; release connections in effect cleanup. Terminal uses this capability to retain its tabs, shell processes and scrollback.
+
+Modules may also register an optional `backgroundIndicator` component. The application bar mounts it alongside ongoing tasks. Return `null` when idle; the module owns its activity state, accessible labels, navigation and confirmation of stop actions.
+
+
+### Shared dialogs
+
+Use `DialogContent` from `@panasms/ui` inside a Radix Root/Portal and the shared
+`dialog-overlay`. Supply explicit `header` (including Radix Title/Description),
+`footer`, and body children. `variant` is `compact`, `form` or `details`; `intent`
+is `edit`, `inspect` or `confirm`. Core supplies the single internal close icon:
+do not add another close button to your heading or override its geometry.
+
+Pass a controlled `dirty` boolean for forms with selection buttons or custom
+editors. Native field edits are tracked as a fallback. Mark footer dismissal
+buttons `data-dialog-cancel`; the shared container then asks about unsaved changes
+in place. Programmatic completion via the Root's state remains available after
+saving. Back/step changes are not dismissal buttons. Set `dirty={false}` for
+transient selection and read-only inspection. Form submit buttons placed in the
+footer must reference the body's form ID using the HTML `form` attribute.
+
+`busy` covers unresolved submissions with the shared waiting layer. Do not keep
+it true merely because an accepted background job is still running; close the
+view and use Tasks. A nested picker temporarily replaces the visible parent
+panel/backdrop, retaining its draft and focus return. Dialog styles belong to the
+core. Test module packages against the core and SDK declarations that expose
+these props before publishing; older published SDK revisions do not describe them.

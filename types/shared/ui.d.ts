@@ -13,7 +13,9 @@ export declare function Notice({ children, error }: {
 }): import("react").JSX.Element;
 export declare function bytes(n: number): string;
 
+export declare function CloseIcon(props: ComponentPropsWithoutRef<'button'> & { ref?: import('react').Ref<HTMLButtonElement> }): import('react').JSX.Element;
+
 type Waiting = { busy?: boolean; message?: string; hint?: string };
-export declare const DialogContent: ForwardRefExoticComponent<ComponentPropsWithoutRef<typeof Dialog.Content> & Waiting & RefAttributes<HTMLDivElement>>;
+export declare const DialogContent: ForwardRefExoticComponent<ComponentPropsWithoutRef<typeof Dialog.Content> & Waiting & { header?: ReactNode; footer?: ReactNode; variant?: 'compact' | 'form' | 'details'; intent?: 'edit' | 'inspect' | 'confirm'; dirty?: boolean } & RefAttributes<HTMLDivElement>>;
 export declare function WaitingOverlay(props: Omit<Waiting, 'busy'>): import("react").JSX.Element;
 export declare function WaitingSurface(props: Waiting & { children: ReactNode; className?: string }): import("react").JSX.Element;
