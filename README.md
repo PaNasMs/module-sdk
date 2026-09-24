@@ -16,7 +16,8 @@ TypeScript declarations for the API 1 globals exposed by core 0.2.x.
 
 Official modules are [Files](https://github.com/PaNasMs/module-files),
 [Terminal](https://github.com/PaNasMs/module-terminal) and
-[Cloud Sync](https://github.com/PaNasMs/module-cloud-sync). Their Go modules pin
+[Cloud Sync](https://github.com/PaNasMs/module-cloud-sync), and
+[Containers and applications](https://github.com/PaNasMs/module-containers). Their Go modules pin
 SDK versions; update and test the dependency deliberately when changing contracts.
 
 ## Identity checks
@@ -87,3 +88,5 @@ view and use Tasks. A nested picker temporarily replaces the visible parent
 panel/backdrop, retaining its draft and focus return. Dialog styles belong to the
 core. Test module packages against the core and SDK declarations that expose
 these props before publishing; older published SDK revisions do not describe them.
+
+Modules can register a `tasks` component for the shared task list. The UI host also exposes Radix Tabs and the policy-aware `FolderPicker` through the SDK. Server modules with long-lived read-only event subscriptions can use `ServeWithPassivePaths`; only GET subscription paths may be excluded from the activity count, never mutations or streams owning active work.
