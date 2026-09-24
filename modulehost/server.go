@@ -2,14 +2,14 @@ package modulehost
 
 import (
 	"encoding/json"
+	"github.com/PaNasMs/module-sdk/auth"
+	"github.com/PaNasMs/module-sdk/modules"
 	"golang.org/x/sys/unix"
 	"log"
 	"net"
 	"net/http"
 	"os"
 	"os/user"
-	"github.com/PaNasMs/module-sdk/auth"
-	"github.com/PaNasMs/module-sdk/modules"
 	"strconv"
 	"sync/atomic"
 )
@@ -45,6 +45,12 @@ func Serve(id string, build func(map[string]bool) http.Handler) {
 }
 
 func ServeWithActivity(id string, activity func() int32, build func(map[string]bool) http.Handler) {
+	ServeWithPassivePaths(id, activity, nil, build)
+}
+
+// Passive paths are read-only event subscriptions that may be disconnected during an update.
+// Never include mutations or streams that own ongoing work.
+func ServeWithPassivePaths(id string, activity func() int32, passive map[string]bool, build func(map[string]bool) http.Handler) {
 	account, e := user.Lookup("panasms")
 	if e != nil {
 		log.Fatal(e)
@@ -73,8 +79,10 @@ func ServeWithActivity(id string, activity func() int32, build func(map[string]b
 			json.NewEncoder(w).Encode(map[string]int32{"active": active.Load() + activity()})
 			return
 		}
-		active.Add(1)
-		defer active.Add(-1)
+		if r.Method != http.MethodGet || !passive[r.URL.Path] {
+			active.Add(1)
+			defer active.Add(-1)
+		}
 		if !modules.Enabled(id) {
 			http.Error(w, "module disabled", 404)
 			return

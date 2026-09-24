@@ -19,3 +19,5 @@ type Waiting = { busy?: boolean; message?: string; hint?: string };
 export declare const DialogContent: ForwardRefExoticComponent<ComponentPropsWithoutRef<typeof Dialog.Content> & Waiting & { header?: ReactNode; footer?: ReactNode; variant?: 'compact' | 'form' | 'details'; intent?: 'edit' | 'inspect' | 'confirm'; dirty?: boolean } & RefAttributes<HTMLDivElement>>;
 export declare function WaitingOverlay(props: Omit<Waiting, 'busy'>): import("react").JSX.Element;
 export declare function WaitingSurface(props: Waiting & { children: ReactNode; className?: string }): import("react").JSX.Element;
+
+export declare function FolderPicker(props: { onChoose: (path: string) => void; policy?: 'share' | 'home' | 'mount'; newFolder?: boolean; defaultName?: string; initialPath?: string; hint?: string }): import('react').JSX.Element;
