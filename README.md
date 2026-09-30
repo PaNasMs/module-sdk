@@ -90,3 +90,12 @@ core. Test module packages against the core and SDK declarations that expose
 these props before publishing; older published SDK revisions do not describe them.
 
 Modules can register a `tasks` component for the shared task list. The UI host also exposes Radix Tabs and the policy-aware `FolderPicker` through the SDK. Server modules with long-lived read-only event subscriptions can use `ServeWithPassivePaths`; only GET subscription paths may be excluded from the activity count, never mutations or streams owning active work.
+
+### User-created file permissions
+
+`userfiles.DefaultUmask()` reads the system `UMASK` from `/etc/login.defs`, with
+022 as the fallback when the setting/file is absent. Invalid configuration is an
+error. Apply it only in a dedicated user worker or child shell, never by changing
+the mask around concurrent requests in the module server. Keep service state and
+secrets explicitly private. Ownership, setgid inheritance and default ACLs remain
+filesystem decisions; a user's shell startup files can further adjust its mask.
