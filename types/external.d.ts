@@ -1,7 +1,7 @@
 export type GrantRequest = {
   connectionId: string
   consumer: string
-  capability: 'google-drive' | 'google-drive-readonly'
+  capability: 'google-drive' | 'google-drive-readonly' | 'dropbox-files'
 }
 export type ExternalGrant = {
   id: string
@@ -13,6 +13,13 @@ export type ExternalGrant = {
   created: number
 }
 export declare function GoogleConnect(props: {
+  link?: boolean
+  grant?: GrantRequest
+  onComplete?: (grantId?: string) => void
+}): import('react').JSX.Element | null
+
+export declare function ProviderConnect(props: {
+  providerId: 'google' | 'github' | 'dropbox'
   link?: boolean
   grant?: GrantRequest
   onComplete?: (grantId?: string) => void
