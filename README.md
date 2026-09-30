@@ -99,3 +99,13 @@ error. Apply it only in a dedicated user worker or child shell, never by changin
 the mask around concurrent requests in the module server. Keep service state and
 secrets explicitly private. Ownership, setgid inheritance and default ACLs remain
 filesystem decisions; a user's shell startup files can further adjust its mask.
+
+### Clearing module task history
+
+Modules contributing `tasks` can also register `taskHistory` with `queryKey`,
+`status(): Promise<{ canClear: boolean }>`, and `clear(): Promise<unknown>`.
+The shell includes these providers in its shared Clear history action, refreshes
+both task-history status and the supplied task query key, and reports failures.
+Implement authorization and atomic persistence in the module backend. Clear only
+terminal entries; retain queued/running tasks and any identifiers required for
+idempotency. Older modules without this optional contract remain supported.
