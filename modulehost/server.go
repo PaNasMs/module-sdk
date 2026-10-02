@@ -3,6 +3,7 @@ package modulehost
 import (
 	"encoding/json"
 	"github.com/PaNasMs/module-sdk/auth"
+	"github.com/PaNasMs/module-sdk/maintenance"
 	"github.com/PaNasMs/module-sdk/modules"
 	"golang.org/x/sys/unix"
 	"log"
@@ -76,10 +77,20 @@ func ServeWithPassivePaths(id string, activity func() int32, passive map[string]
 	var active atomic.Int32
 	srv := &http.Server{Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/health" {
-			json.NewEncoder(w).Encode(map[string]int32{"active": active.Load() + activity()})
+			version := int32(0)
+			if os.Getenv("PANASMS_MAINTENANCE_LOCK") != "" {
+				version = 1
+			}
+			json.NewEncoder(w).Encode(map[string]int32{"active": active.Load() + activity(), "maintenanceVersion": version})
 			return
 		}
 		if r.Method != http.MethodGet || !passive[r.URL.Path] {
+			release, err := maintenance.Acquire()
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusServiceUnavailable)
+				return
+			}
+			defer release()
 			active.Add(1)
 			defer active.Add(-1)
 		}
