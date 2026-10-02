@@ -123,3 +123,19 @@ variable the helper is inactive for standalone development. `/health` advertises
 `maintenanceVersion: 1` only when configured. This declaration requires that all
 module background writers follow the contract. The root-owned lock inode is
 created by core packaging and must never be deleted/replaced during operation.
+
+### Module descriptions
+
+In `manifest.json`, `description` is the short summary shown in module lists.
+Use one or two concise sentences. Optional `longDescription` explains the module
+on its details page: main capabilities, typical uses, required access and material
+limitations. Both fields contain plain text; separate paragraphs with `\n\n`.
+HTML and Markdown are not rendered. Detailed descriptions allow up to 16,000
+characters per language.
+
+Provide English at the top level and translations under `translations.en`,
+`translations.ru` and `translations.uk`, using the same field names. Each field
+falls back independently to English. When no detailed description exists, the
+details page shows the localized short summary, so older packages remain usable.
+Metadata belongs to the signed module manifest: publish a new module version to
+change it; never rewrite an existing registry release.
