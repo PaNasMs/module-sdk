@@ -20,4 +20,4 @@ export declare const DialogContent: ForwardRefExoticComponent<ComponentPropsWith
 export declare function WaitingOverlay(props: Omit<Waiting, 'busy'>): import("react").JSX.Element;
 export declare function WaitingSurface(props: Waiting & { children: ReactNode; className?: string }): import("react").JSX.Element;
 
-export declare function FolderPicker(props: { onChoose: (path: string) => void; policy?: 'share' | 'home' | 'mount'; newFolder?: boolean; defaultName?: string; initialPath?: string; hint?: string }): import('react').JSX.Element;
+export declare function FolderPicker(props: { onChoose: (path: string) => void; policy?: 'share' | 'home' | 'mount' | 'data'; newFolder?: boolean; defaultName?: string; initialPath?: string; hint?: string }): import('react').JSX.Element;
