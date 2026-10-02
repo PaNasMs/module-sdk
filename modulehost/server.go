@@ -71,8 +71,12 @@ func ServeWithPassivePaths(id string, activity func() int32, passive map[string]
 		log.Fatal(e)
 	}
 	defer os.Remove(path)
-	os.Chown(path, 0, gid)
-	os.Chmod(path, 0660)
+	if e = os.Chown(path, 0, gid); e != nil {
+		log.Fatal(e)
+	}
+	if e = os.Chmod(path, 0660); e != nil {
+		log.Fatal(e)
+	}
 	handler := build(allowed)
 	var active atomic.Int32
 	srv := &http.Server{Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
