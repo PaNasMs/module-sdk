@@ -109,3 +109,17 @@ both task-history status and the supplied task query key, and reports failures.
 Implement authorization and atomic persistence in the module backend. Clear only
 terminal entries; retain queued/running tasks and any identifiers required for
 idempotency. Older modules without this optional contract remain supported.
+
+## System maintenance
+
+`maintenance.Acquire()` holds a shared host maintenance lock until its returned
+release function is called. The module host protects synchronous requests. Every
+background mutation, including timer-driven synchronization, must separately hold
+this lock for its entire lifetime and reject/defer work if acquisition fails.
+Do not release it when returning a job ID while the job is still running.
+
+The core-generated service unit sets `PANASMS_MAINTENANCE_LOCK`; without this
+variable the helper is inactive for standalone development. `/health` advertises
+`maintenanceVersion: 1` only when configured. This declaration requires that all
+module background writers follow the contract. The root-owned lock inode is
+created by core packaging and must never be deleted/replaced during operation.
