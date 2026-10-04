@@ -21,3 +21,28 @@ export declare function WaitingOverlay(props: Omit<Waiting, 'busy'>): import("re
 export declare function WaitingSurface(props: Waiting & { children: ReactNode; className?: string }): import("react").JSX.Element;
 
 export declare function FolderPicker(props: { onChoose: (path: string) => void; policy?: 'share' | 'home' | 'mount' | 'data'; newFolder?: boolean; defaultName?: string; initialPath?: string; hint?: string }): import('react').JSX.Element;
+
+/** One entry of the section navigation: a part of a section or an object. */
+export type SectionItem = {
+    id: string;
+    title: string;
+    icon?: string;
+    /** Second line for an object: its state in words. */
+    note?: string;
+    /** State dot for an object; always paired with `note`. */
+    tone?: 'ok' | 'warn' | 'danger' | 'busy' | 'idle';
+    count?: number | string;
+    /** Heading shown above the first item of each group. */
+    group?: string;
+    /** Route for link navigation. Without it the item is a tab of the surrounding Tabs.Root. */
+    to?: string;
+};
+/**
+ * The one navigation between the parts of a section: a rail from 1024px and a
+ * switcher that opens a sheet below it. Put it first inside an element with
+ * class `section-layout`. Tab items need a surrounding Tabs.Root; items with
+ * `to` are route links; `tabs={false}` makes plain buttons that call `onChange`.
+ */
+export declare function SectionNav(props: { label: string; items: SectionItem[]; value: string; onChange?: (id: string) => void; objects?: boolean; tabs?: boolean; footer?: ReactNode }): import('react').JSX.Element;
+/** A group of rarely used content on the same page; use it instead of tabs nested in a section. */
+export declare function Disclosure(props: { title: string; hint?: string; open: boolean; onOpenChange: (open: boolean) => void; children: ReactNode }): import('react').JSX.Element;
