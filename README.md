@@ -1,141 +1,167 @@
 # PaNasMs module SDK
 
-Shared building blocks for independently installed PaNasMs modules. The SDK
-provides Go module hosting, Linux identity checks and transfer helpers, plus
-TypeScript declarations for the API 1 globals exposed by core 0.2.x.
+This repository holds the shared code for PaNasMs (Pavlo's NAS Management System) modules, the
+packages that users install separately from the core through the panel's Modules page. It has Go
+packages for running a module service, checking Linux identities, transferring files, using the
+host maintenance lock and requesting external permissions. It also has TypeScript declarations for
+the module API 1 globals that core 0.2.x exposes to module pages. The core lives in the
+[main repository](https://github.com/PaNasMs/panasms), and the [project website](https://panasms.github.io/)
+has user guides and the [module catalog](https://panasms.github.io/module-registry/).
+
+The official modules are [Files](https://github.com/PaNasMs/module-files),
+[Terminal](https://github.com/PaNasMs/module-terminal),
+[Cloud Sync](https://github.com/PaNasMs/module-cloud-sync) and
+[Containers](https://github.com/PaNasMs/module-containers). Each pins an SDK version in its Go
+module. When you change a contract here, update and test that dependency in each module.
+
+Module pages follow the
+[PaNasMs interface design standard](https://github.com/PaNasMs/panasms/blob/main/docs/ui-design-guidelines.md).
 
 ## Contents
 
 | Path | Purpose |
 | --- | --- |
-| [modulehost](modulehost) | Module service hosting |
+| [modulehost](modulehost) | Module service hosting and the `/health` endpoint |
 | [auth](auth) | Linux identity and PAM integration |
-| [transfer](transfer) | File-transfer helpers |
-| [modules](modules) | Shared module definitions |
-| [types](types) | Host-provided frontend API declarations |
-
-Official modules are [Files](https://github.com/PaNasMs/module-files),
-[Terminal](https://github.com/PaNasMs/module-terminal) and
-[Cloud Sync](https://github.com/PaNasMs/module-cloud-sync), and
-[Containers and applications](https://github.com/PaNasMs/module-containers). Their Go modules pin
-SDK versions; update and test the dependency deliberately when changing contracts.
-
-## Identity checks
-
-`auth.Lookup` remains administrator-only for existing modules. Modules that support
-ordinary panel users must explicitly use `auth.LookupPanel`, enforce Linux file
-permissions and authorize each operation. Both paths read current Linux membership
-and PaNasMs account access policy. Core authenticates the session before proxying
-a request; module sockets must accept only the trusted core peer.
+| [transfer](transfer) | File transfer helpers |
+| [modules](modules) | Shared module manifest definitions |
+| [userfiles](userfiles) | Default permissions for files that modules create for users |
+| [maintenance](maintenance) | Shared host maintenance lock |
+| [external](external) | Client for the core's external permission broker |
+| [types](types) | TypeScript declarations for the host-provided frontend API |
 
 ## Development
 
-Use Linux, Go 1.26 or newer, a C compiler and PAM headers (`libpam0g-dev` on Debian).
+You need Linux, Go 1.26 or newer, a C compiler and the PAM headers (`libpam0g-dev` on Debian).
 
 ```sh
 go test -tags pam ./...
 go vet -tags pam ./...
 ```
 
-The TypeScript package is private and supplies declarations, not a separately
-published runtime. Module bundles must use the core-provided React, router and
-query client rather than bundle duplicate instances. SDK version, module package
-version, core compatibility range and module API version are separate contracts;
-check each when releasing a module.
+The **Test SDK** workflow runs `go test -tags pam ./...` on ARM64 for every push and pull request.
 
-See the [registry](https://github.com/PaNasMs/module-registry) for package signing
-and distribution. No signing keys or installable module archives belong here.
+The TypeScript package `@panasms/module-sdk` is private. It supplies declarations only, with no
+published runtime. Module bundles must use the React, router and query client instances that the
+core provides and must not bundle their own copies. The SDK version, module package version, core
+compatibility range and module API version are separate contracts. Check each one when you
+release a module.
 
-## License
+Package signing and distribution happen in the
+[module registry](https://github.com/PaNasMs/module-registry). Signing keys and installable module
+archives do not belong in this repository.
 
-Public documentation is maintained in English. Original code uses
-[PolyForm Noncommercial 1.0.0](LICENSE); see [NOTICE](NOTICE) for dependencies.
+## Backend contracts
 
-## External permissions
+### Identity checks
 
-The `external` Go package is the backend client for the core's private Unix token
-broker. `types/external.d.ts` describes the host's Google consent component and
-permission metadata. See the [module permission integration guide](https://github.com/PaNasMs/panasms/blob/main/documentation/external-grants.md)
-for consumer registration, identity ownership, rclone integration and lifecycle
-requirements. Refresh tokens and client secrets remain in the core.
+`auth.Lookup` accepts administrators only and remains the default for existing modules. A module
+that serves ordinary panel users must call `auth.LookupPanel`, enforce Linux file permissions and
+authorize each operation itself. Both functions read the current Linux group membership and the
+PaNasMs account access policy. The core authenticates the session before it proxies a request. A
+module socket must accept connections only from the trusted core peer.
 
-### Retaining an interactive module page
+### System maintenance
 
-Set `keepAlive: true` in the module definition to retain its mounted component after the first visit. The shell passes `active` to the component; use it to manage focus and visibility-dependent rendering. Switching sections preserves component state and live connections. This is browser-session retention, not recovery after a reload. The component is unmounted on sign-out or loss of administrator access; release connections in effect cleanup. Terminal uses this capability to retain its tabs, shell processes and scrollback.
+`maintenance.Acquire()` holds a shared host maintenance lock until you call the release function
+it returns. The module host takes the lock for synchronous requests. Every background write,
+including timer-driven synchronization, must hold the lock itself for its whole duration and must
+reject or defer the work if it cannot acquire the lock. Do not release the lock when you return a
+job ID for a job that is still running.
 
-Modules may also register an optional `backgroundIndicator` component. The application bar mounts it alongside ongoing tasks. Return `null` when idle; the module owns its activity state, accessible labels, navigation and confirmation of stop actions.
+The service unit that the core generates sets `PANASMS_MAINTENANCE_LOCK`. Without this variable
+the helper does nothing, which allows standalone development. `/health` reports
+`maintenanceVersion: 1` only when the variable is set, and that value promises that every
+background writer in the module follows this contract. Core packaging creates the root-owned lock
+file. Never delete or replace it while the system is running.
 
+### Files created for users
+
+`userfiles.DefaultUmask()` reads `UMASK` from `/etc/login.defs` and returns 022 when the setting or
+the file is missing. An invalid value returns an error. Apply the mask only in a dedicated
+per-user worker or child shell. Never change the process mask around concurrent requests in the
+module server. Keep service state and secrets private explicitly. Ownership, setgid inheritance
+and default ACLs stay with the filesystem, and a user's shell startup files can change the mask
+further.
+
+### Passive event subscriptions
+
+Server modules with long-lived read-only event subscriptions can use
+`modulehost.ServeWithPassivePaths`. Exclude only GET subscription paths from the activity count.
+Never exclude writes or streams that own active work.
+
+### External permissions
+
+The `external` package is the backend client for the core's private Unix token broker.
+`types/external.d.ts` describes the host's Google consent component and permission metadata. The
+[module permission integration guide](https://github.com/PaNasMs/panasms/blob/main/documentation/external-grants.md)
+covers consumer registration, identity ownership, rclone integration and lifecycle requirements.
+Refresh tokens and client secrets stay in the core.
+
+## Frontend contracts
+
+### Keeping a module page mounted
+
+Set `keepAlive: true` in the module definition to keep its component mounted after the first
+visit. The shell passes an `active` prop, which the component uses for focus and for rendering
+that depends on visibility. Switching sections keeps component state and live connections. This
+lasts for the browser session only and does not survive a reload. The shell unmounts the component
+on sign-out or when administrator access is lost, so release connections in effect cleanup.
+Terminal uses `keepAlive` to keep its tabs, shell processes and scrollback.
+
+A module can also register a `backgroundIndicator` component, which the application bar mounts
+next to ongoing tasks. Return `null` when idle. The module owns its activity state, accessible
+labels, navigation and the confirmation of stop actions.
 
 ### Shared dialogs
 
-Use `DialogContent` from `@panasms/ui` inside a Radix Root/Portal and the shared
-`dialog-overlay`. Supply explicit `header` (including Radix Title/Description),
-`footer`, and body children. `variant` is `compact`, `form` or `details`; `intent`
-is `edit`, `inspect` or `confirm`. Core supplies the single internal close icon:
-do not add another close button to your heading or override its geometry.
+Use `DialogContent` from `@panasms/ui` inside a Radix Root and Portal with the shared
+`dialog-overlay`. Pass an explicit `header` (including the Radix Title and Description), a
+`footer` and the body as children. `variant` is `compact`, `form` or `details`. `intent` is
+`edit`, `inspect` or `confirm`. The core draws the only close icon, so do not add another close
+button to the heading or change its geometry.
 
-Pass a controlled `dirty` boolean for forms with selection buttons or custom
-editors. Native field edits are tracked as a fallback. Mark footer dismissal
-buttons `data-dialog-cancel`; the shared container then asks about unsaved changes
-in place. Programmatic completion via the Root's state remains available after
-saving. Back/step changes are not dismissal buttons. Set `dirty={false}` for
-transient selection and read-only inspection. Form submit buttons placed in the
-footer must reference the body's form ID using the HTML `form` attribute.
+Pass a controlled `dirty` boolean for forms with selection buttons or custom editors. The dialog
+also tracks native field edits as a fallback. Mark footer buttons that dismiss the dialog with
+`data-dialog-cancel`, and the shared container asks about unsaved changes in place. Closing the
+dialog through the Root's state after a save still works. Back and step buttons are not dismissal
+buttons. Set `dirty={false}` for short-lived selection and read-only inspection. A submit button
+in the footer must reference the body's form ID through the HTML `form` attribute.
 
-`busy` covers unresolved submissions with the shared waiting layer. Do not keep
-it true merely because an accepted background job is still running; close the
-view and use Tasks. A nested picker temporarily replaces the visible parent
-panel/backdrop, retaining its draft and focus return. Dialog styles belong to the
-core. Test module packages against the core and SDK declarations that expose
-these props before publishing; older published SDK revisions do not describe them.
+`busy` shows the shared waiting layer while a submission is unresolved. Do not keep it true while
+an accepted background job is still running. Close the dialog and let Tasks show the job. A nested
+picker temporarily replaces the visible parent panel and backdrop, and it keeps the parent's draft
+and focus return. Dialog styles belong to the core. Before publishing, test module packages against
+a core and SDK declarations that include these props, because older published SDK revisions do
+not describe them.
 
-Modules can register a `tasks` component for the shared task list. The UI host also exposes Radix Tabs and the policy-aware `FolderPicker` through the SDK. Server modules with long-lived read-only event subscriptions can use `ServeWithPassivePaths`; only GET subscription paths may be excluded from the activity count, never mutations or streams owning active work.
+### Tasks and other shared components
 
-### User-created file permissions
+A module can register a `tasks` component for the shared task list. The host also exposes Radix
+Tabs and the policy-aware `FolderPicker` through the SDK.
 
-`userfiles.DefaultUmask()` reads the system `UMASK` from `/etc/login.defs`, with
-022 as the fallback when the setting/file is absent. Invalid configuration is an
-error. Apply it only in a dedicated user worker or child shell, never by changing
-the mask around concurrent requests in the module server. Keep service state and
-secrets explicitly private. Ownership, setgid inheritance and default ACLs remain
-filesystem decisions; a user's shell startup files can further adjust its mask.
+Modules that contribute `tasks` can also register `taskHistory` with `queryKey`,
+`status(): Promise<{ canClear: boolean }>` and `clear(): Promise<unknown>`. The shell includes
+these providers in its shared Clear history action, refreshes the task history status and the
+given query key, and reports failures. The module backend must handle authorization and save the
+change atomically. Clear only finished entries. Keep queued and running tasks and any identifiers
+needed for idempotency. Modules without this optional contract keep working.
 
-### Clearing module task history
+## Module descriptions
 
-Modules contributing `tasks` can also register `taskHistory` with `queryKey`,
-`status(): Promise<{ canClear: boolean }>`, and `clear(): Promise<unknown>`.
-The shell includes these providers in its shared Clear history action, refreshes
-both task-history status and the supplied task query key, and reports failures.
-Implement authorization and atomic persistence in the module backend. Clear only
-terminal entries; retain queued/running tasks and any identifiers required for
-idempotency. Older modules without this optional contract remain supported.
+In `manifest.json`, `description` is the short summary shown in module lists. Keep it to one or
+two sentences. The optional `longDescription` appears on the module details page and explains the
+main capabilities, typical uses, required access and important limitations. Both fields are plain
+text, with paragraphs separated by `\n\n`. The panel does not render HTML or Markdown. A detailed
+description can have up to 16,000 characters per language.
 
-## System maintenance
+Put English at the top level and translations under `translations.en`, `translations.ru` and
+`translations.uk`, with the same field names. Each field falls back to English on its own. When a
+module has no detailed description, the details page shows the localized short summary, so older
+packages still display correctly. These fields are part of the signed module manifest. To change
+them, publish a new module version. Never rewrite an existing registry release.
 
-`maintenance.Acquire()` holds a shared host maintenance lock until its returned
-release function is called. The module host protects synchronous requests. Every
-background mutation, including timer-driven synchronization, must separately hold
-this lock for its entire lifetime and reject/defer work if acquisition fails.
-Do not release it when returning a job ID while the job is still running.
+## License
 
-The core-generated service unit sets `PANASMS_MAINTENANCE_LOCK`; without this
-variable the helper is inactive for standalone development. `/health` advertises
-`maintenanceVersion: 1` only when configured. This declaration requires that all
-module background writers follow the contract. The root-owned lock inode is
-created by core packaging and must never be deleted/replaced during operation.
-
-### Module descriptions
-
-In `manifest.json`, `description` is the short summary shown in module lists.
-Use one or two concise sentences. Optional `longDescription` explains the module
-on its details page: main capabilities, typical uses, required access and material
-limitations. Both fields contain plain text; separate paragraphs with `\n\n`.
-HTML and Markdown are not rendered. Detailed descriptions allow up to 16,000
-characters per language.
-
-Provide English at the top level and translations under `translations.en`,
-`translations.ru` and `translations.uk`, using the same field names. Each field
-falls back independently to English. When no detailed description exists, the
-details page shows the localized short summary, so older packages remain usable.
-Metadata belongs to the signed module manifest: publish a new module version to
-change it; never rewrite an existing registry release.
+Original code is licensed under [PolyForm Noncommercial 1.0.0](LICENSE). See [NOTICE](NOTICE) for
+dependencies. Public documentation is in English.
