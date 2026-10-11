@@ -4,6 +4,7 @@
   "private": true,
   "license": "SEE LICENSE IN LICENSE",
   "files": [
-    "types"
+    "types",
+    "NOTICE"
   ]
 }
