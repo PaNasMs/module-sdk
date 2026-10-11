@@ -1,7 +1,7 @@
 export type GrantRequest = {
   connectionId: string
   consumer: string
-  capability: 'google-drive' | 'google-drive-readonly' | 'dropbox-files'
+  capability: 'google-drive' | 'google-drive-readonly' | 'dropbox-files' | 'github-repositories'
 }
 export type ExternalGrant = {
   id: string
