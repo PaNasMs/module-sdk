@@ -163,5 +163,5 @@ them, publish a new module version. Never rewrite an existing registry release.
 
 ## License
 
-Original code is licensed under [PaNasMs Source-Available License 1.0](LICENSE). See [NOTICE](NOTICE) for
+Original code is licensed under [Sustainable Use License 1.0](LICENSE). See [NOTICE](NOTICE) for
 dependencies. Public documentation is in English.

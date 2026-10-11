@@ -2,7 +2,7 @@
   "name": "@panasms/module-sdk",
   "version": "0.1.0",
   "private": true,
-  "license": "SEE LICENSE IN LICENSE",
+  "license": "SUL-1.0",
   "files": [
     "types",
     "NOTICE"
