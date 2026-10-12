@@ -31,6 +31,7 @@ export type ModuleDefinition = {
     path: string;
     routes?: string[];
     icon: string;
+    memberAccess?: boolean;
     keepAlive?: boolean;
     taskHistory?: { queryKey: readonly string[]; status: () => Promise<{ canClear: boolean }>; clear: () => Promise<unknown> }
   tasks?: ComponentType;
