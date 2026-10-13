@@ -598,6 +598,7 @@ export interface components {
           kind: string
           x: number
           y: number
+          config?: { [key: string]: string }
         }[]
       }
       smartCrcBaselines?: {
