@@ -11,6 +11,12 @@ export type WidgetDefinition = {
      */
     component?: ComponentType<{
         kind: string;
+        config?: Record<string, string>;
+        editing?: boolean;
+    }>;
+    configure?: ComponentType<{
+        value: Record<string, string>;
+        onChange: (value: Record<string, string>) => void;
     }>;
     icon?: string;
     /** Показывать ссылку на страницу истории показателей в заголовке. */
@@ -24,11 +30,12 @@ export type SettingsSection = {
     icon: string;
     component: ComponentType;
     routes?: string[];
+    administratorOnly?: boolean;
 };
 export type ModuleDefinition = {
     id: string;
     title: string;
-    path: string;
+    path?: string;
     routes?: string[];
     icon: string;
     memberAccess?: boolean;
@@ -36,7 +43,7 @@ export type ModuleDefinition = {
     taskHistory?: { queryKey: readonly string[]; status: () => Promise<{ canClear: boolean }>; clear: () => Promise<unknown> }
   tasks?: ComponentType;
     backgroundIndicator?: ComponentType;
-    component: ComponentType<{ active?: boolean }>;
+    component?: ComponentType<{ active?: boolean }>;
     settings?: SettingsSection[];
     widgets?: Record<string, WidgetDefinition>;
 };
